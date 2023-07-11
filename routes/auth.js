@@ -45,20 +45,16 @@ router.post("/", (req, res) => {
     if (isAuthenticated) {
       console.log("Usuário autenticado com sucesso");
       // Continua com a lógica de negócios após a autenticação bem-sucedida
-      const token = jwt.sign(
-        { username: email },
-        "secret-key",
-        (error, token) => {
-          if (err) {
-            res.status(500).json({ mensagem: "Erro ao gerar o JWT" });
+      const token = jwt.sign({ email: email }, "secret-key", (error, token) => {
+        if (err) {
+          res.status(500).json({ mensagem: "Erro ao gerar o JWT" });
 
-            return;
-          }
-          console.log("token 1", token);
-          res.set("x-access-token", token);
-          res.end();
+          return;
         }
-      );
+        console.log("token 1", token);
+        res.set("x-access-token", token);
+        res.end();
+      });
     } else {
       console.log("Email ou senha incorretos");
       res.status(401).json({ error: "Email ou senha inválidos" });

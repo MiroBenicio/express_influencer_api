@@ -67,52 +67,78 @@ router.post("/", validarJWT, (req, res) => {
 });
 
 router.patch("/:id", validarJWT, (req, res) => {
-  let data = {
-    nome: req.body.nome,
-    numero_inscritos: req.body.numero_inscritos,
-    canal: req.body.canal,
-    plataforma: req.body.plataforma,
-    categoria: req.body.categoria,
-  };
-  db.run(
-    `UPDATE influenciador set 
+  db.get(
+    "SELECT * FROM usuario WHERE email = ?",
+    [req.userInfo.email],
+    (err, user) => {
+      if (err) {
+        console.error(err);
+        return callback(err, false);
+      }
+
+      if (!user) return;
+      if (!user.admin) return res.status(400).json({ error: res.message });
+      let data = {
+        nome: req.body.nome,
+        numero_inscritos: req.body.numero_inscritos,
+        canal: req.body.canal,
+        plataforma: req.body.plataforma,
+        categoria: req.body.categoria,
+      };
+      db.run(
+        `UPDATE influenciador set 
            nome = COALESCE(?,nome), 
            numero_inscritos = COALESCE(?,numero_inscritos), 
            canal = COALESCE(?,canal),
            plataforma = COALESCE(?,plataforma),
            categoria = COALESCE(?,categoria)
            WHERE id = ?`,
-    [
-      data.nome,
-      data.numero_inscritos,
-      data.canal,
-      data.plataforma,
-      data.categoria,
-    ],
-    function (err, result) {
-      if (err) {
-        res.status(400).json({ error: res.message });
-        return;
-      }
-      res.json({
-        message: "success",
-        data: data,
-        changes: this.changes,
-      });
+        [
+          data.nome,
+          data.numero_inscritos,
+          data.canal,
+          data.plataforma,
+          data.categoria,
+        ],
+        function (err, result) {
+          if (err) {
+            res.status(400).json({ error: res.message });
+            return;
+          }
+          res.json({
+            message: "success",
+            data: data,
+            changes: this.changes,
+          });
+        }
+      );
     }
   );
 });
 
 router.delete("/:id", validarJWT, (req, res) => {
-  db.run(
-    "DELETE FROM influenciador WHERE id = ?",
-    req.params.id,
-    function (err, result) {
+  db.get(
+    "SELECT * FROM usuario WHERE email = ?",
+    [req.userInfo.email],
+    (err, user) => {
       if (err) {
-        res.status(400).json({ error: res.message });
-        return;
+        console.error(err);
+        return callback(err, false);
       }
-      res.json({ message: "deleted", changes: this.changes });
+
+      if (!user) return;
+      if (!user.admin) return res.status(400).json({ error: res.message });
+      db.run(
+        "DELETE FROM influenciador WHERE id = ?",
+        req.params.id,
+        function (err, result) {
+          if (err) {
+            res.status(400).json({ error: res.message });
+            return;
+          }
+          res.json({ message: "deleted", changes: this.changes });
+        }
+      );
     }
   );
 });

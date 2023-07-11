@@ -22,7 +22,7 @@ router.get("/", function (req, res, next) {
   });
 });
 
-router.post("/", (req, res, next) => {
+router.post("/", validarJWT, (req, res, next) => {
   let errors = [];
   if (!req.body.senha) errors.push("Senha não informada");
 
@@ -30,28 +30,43 @@ router.post("/", (req, res, next) => {
 
   if (errors.length) return res.status(400).json({ error: errors.join(",") });
 
-  const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(req.body.senha, salt);
+  db.get(
+    "SELECT * FROM usuario WHERE email = ?",
+    [req.userInfo.email],
+    (err, user) => {
+      if (err) {
+        console.error(err);
+        return callback(err, false);
+      }
 
-  let data = {
-    nome: req.body.nome,
-    email: req.body.email,
-    senha: hash,
-    admin: req.body.admin ? 1 : 0,
-  };
-  let sql = "INSERT INTO usuario (nome, email, senha, admin) VALUES (?,?,?,?)";
-  let params = [data.nome, data.email, data.senha, data.admin];
-  db.run(sql, params, function (err, result) {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
+      if (!user) return;
+      if (!user.admin) return res.status(400).json({ error: res.message });
+
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(req.body.senha, salt);
+
+      let data = {
+        nome: req.body.nome,
+        email: req.body.email,
+        senha: hash,
+        admin: req.body.admin ? 1 : 0,
+      };
+      let sql =
+        "INSERT INTO usuario (nome, email, senha, admin) VALUES (?,?,?,?)";
+      let params = [data.nome, data.email, data.senha, data.admin];
+      db.run(sql, params, function (err, result) {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        res.json({
+          message: "success",
+          data: data,
+          id: this.lastID,
+        });
+      });
     }
-    res.json({
-      message: "success",
-      data: data,
-      id: this.lastID,
-    });
-  });
+  );
 });
 
 module.exports = router;

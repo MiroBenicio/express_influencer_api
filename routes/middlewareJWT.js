@@ -1,4 +1,5 @@
 const validarJWT = (req, res, next) => {
+  console.log(req.method);
   const token = req.headers.authorization.split(" ")[1];
   const chavePrivada = "secret-key";
 
@@ -14,7 +15,7 @@ const validarJWT = (req, res, next) => {
     // Este mesmo objeto chegará na rota
     // podendo acessar o req.userInfo
     req.userInfo = userInfo;
-    console.log(userInfo);
+    //console.log(userInfo);
     next();
   });
 };
