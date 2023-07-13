@@ -4,7 +4,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../database/index");
 
-// Middleware para autenticação
 function autenticacao(email, senha, callback) {
   db.get("SELECT * FROM usuario WHERE email = ?", [email], (err, row) => {
     if (err) {
@@ -13,22 +12,18 @@ function autenticacao(email, senha, callback) {
     }
 
     if (!row) {
-      // Usuário não encontrado
       return callback(null, false);
     }
 
     const senhaComparada = bcrypt.compareSync(senha, row.senha);
     if (!senhaComparada) {
-      // Senha incorreta
       return callback(null, false);
     }
 
-    // Autenticação bem-sucedida
     return callback(null, true);
   });
 }
 
-// Rota de login
 router.post("/", (req, res) => {
   const { email, senha } = req.body;
 
@@ -38,13 +33,11 @@ router.post("/", (req, res) => {
   autenticacao(email, senha, (err, isAuthenticated) => {
     if (err) {
       console.error(err);
-      // Trate o erro conforme necessário
       return;
     }
 
     if (isAuthenticated) {
       console.log("Usuário autenticado com sucesso");
-      // Continua com a lógica de negócios após a autenticação bem-sucedida
       const token = jwt.sign({ email: email }, "secret-key", (error, token) => {
         if (err) {
           res.status(500).json({ mensagem: "Erro ao gerar o JWT" });
@@ -52,13 +45,17 @@ router.post("/", (req, res) => {
           return;
         }
         console.log("token 1", token);
+        res.json({
+          message: "Autenticado com sucesso",
+          data: token,
+          status: 200,
+        });
         res.set("x-access-token", token);
         res.end();
       });
     } else {
       console.log("Email ou senha incorretos");
-      res.status(401).json({ error: "Email ou senha inválidos" });
-      // Trate a autenticação falhada conforme necessário
+      res.status(400).json({ error: "Email ou senha inválidos" });
     }
   });
 });

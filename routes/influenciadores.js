@@ -15,10 +15,7 @@ router.get("/", validarJWT, function (req, res) {
       res.status(400).json({ error: err.message });
       return;
     }
-    res.json({
-      message: "success",
-      data: rows,
-    });
+    res.status(200).send(rows);
   });
 });
 
@@ -66,7 +63,7 @@ router.post("/", validarJWT, (req, res) => {
   });
 });
 
-router.patch("/:id", validarJWT, (req, res) => {
+router.put("/:id", validarJWT, (req, res) => {
   db.get(
     "SELECT * FROM usuario WHERE email = ?",
     [req.userInfo.email],
@@ -86,12 +83,12 @@ router.patch("/:id", validarJWT, (req, res) => {
         categoria: req.body.categoria,
       };
       db.run(
-        `UPDATE influenciador set 
-           nome = COALESCE(?,nome), 
-           numero_inscritos = COALESCE(?,numero_inscritos), 
-           canal = COALESCE(?,canal),
-           plataforma = COALESCE(?,plataforma),
-           categoria = COALESCE(?,categoria)
+        `UPDATE influenciador SET 
+            nome = ?,
+            numero_inscritos = ?,
+            canal = ?,
+            plataforma = ?,
+            categoria = ?
            WHERE id = ?`,
         [
           data.nome,
@@ -99,6 +96,7 @@ router.patch("/:id", validarJWT, (req, res) => {
           data.canal,
           data.plataforma,
           data.categoria,
+          req.params.id,
         ],
         function (err, result) {
           if (err) {
@@ -108,7 +106,6 @@ router.patch("/:id", validarJWT, (req, res) => {
           res.json({
             message: "success",
             data: data,
-            changes: this.changes,
           });
         }
       );
